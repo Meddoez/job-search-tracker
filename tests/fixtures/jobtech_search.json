@@ -1,0 +1,27 @@
+{
+  "total": {"value": 2},
+  "hits": [
+    {
+      "id": "fixture-python-1",
+      "headline": "Python Backend Engineer",
+      "employer": {"name": "Example AB", "workplace": "Stockholm office"},
+      "workplace_address": {"city": null, "municipality": "Stockholm", "region": "Stockholms län"},
+      "webpage_url": "https://example.com/jobs/python-backend",
+      "description": {"text": "Build Python services with Docker.", "text_formatted": "<p>Build Python services with Docker.</p>"},
+      "must_have": {"skills": [{"label": "Amazon Web Services (AWS)"}]},
+      "nice_to_have": {"skills": [{"label": "PostgreSQL"}]},
+      "publication_date": "2026-09-26T10:00:00"
+    },
+    {
+      "id": "fixture-java-2",
+      "headline": "Java Backend Engineer",
+      "employer": {"name": "Other AB"},
+      "workplace_address": {"city": "Göteborg"},
+      "webpage_url": "https://example.com/jobs/java-backend",
+      "description": {"text": "Build Java services with Spring Boot."},
+      "must_have": {"skills": []},
+      "nice_to_have": {"skills": []},
+      "publication_date": "2026-09-25T08:00:00"
+    }
+  ]
+}

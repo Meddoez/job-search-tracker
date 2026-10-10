@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+*.pyc
+data/*.sqlite3
+data/profile.json
+data/raw
+.env
+.planning
+frontend/node_modules
+frontend/dist
+backend/api

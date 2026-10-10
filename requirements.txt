@@ -1,0 +1,10 @@
+alembic
+fastapi
+httpx2
+psycopg[binary]
+pytest
+requests
+setuptools
+sqlalchemy
+wheel
+uvicorn

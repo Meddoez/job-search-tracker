@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-search-tracker"
+version = "0.1.0"
+description = "Local job search and application tracker with technical skill extraction"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic",
+    "fastapi",
+    "psycopg[binary]",
+    "requests",
+    "sqlalchemy",
+    "uvicorn",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires a PostgreSQL database configured by TEST_DATABASE_URL",
+]
