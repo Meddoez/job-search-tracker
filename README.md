@@ -114,23 +114,6 @@ For local Python development, install Python 3.11 or newer and set up the virtua
 
 PostgreSQL-backed Python tests require `TEST_DATABASE_URL`; `make test` configures this inside Compose.
 
-To inspect a raw JobTech response while working on search:
-
-```bash
-.venv/bin/python -m job_search_tracker.cli.inspect_jobtech
-```
-
-## Frontend formatting
-
-The frontend uses Prettier. Run these commands from the project root:
-
-```bash
-npm --prefix frontend run format:check
-npm --prefix frontend run format
-```
-
-`format:check` checks formatting without changing files; `format` applies it.
-
 ## What's next
 - Add notes to each job for interview questions, feedback, and follow-ups.
 - Record what went well, what I struggled with, and what to practice before the next interview.
