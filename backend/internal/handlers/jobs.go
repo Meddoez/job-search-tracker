@@ -35,6 +35,11 @@ type ProfileJobRepository interface {
 	GetProfileJobs(
 		ctx context.Context,
 		porfileID int) ([]models.SavedProfileJob, error)
+	DeleteProfileJob(
+		ctx context.Context,
+		profileID int,
+		jobID int,
+	) (error)
 }
 
 type UpdateProfileJobRequest struct {
@@ -247,17 +252,35 @@ func DeleteProfileJobHandler(repo ProfileJobRepository) gin.HandlerFunc {
 		profileID, err := strconv.Atoi(c.Param("id"))
 		if err != nil  || profileID <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "A valid profileID is required"
+				"message": "A valid profileID is required",
 			})
+			return
 		}
 
 		jobID, err := strconv.Atoi(c.Param("jobId"))		
 		if err != nil || jobID <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "A valid jobID is required"
+				"message": "A valid jobID is required",
 			})
+			return
 		}
 
-		
+		err = repo.DeleteProfileJob(c.Request.Context(), profileID, jobID)
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H {
+				"message": "ProfileJob not found",
+			})
+			return
+		}
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H {
+				"message": "Failed to delete ProfileJob",
+			})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H {
+			"message": "Succesfully deleted ProfileJob",
+		})
 	}
 }

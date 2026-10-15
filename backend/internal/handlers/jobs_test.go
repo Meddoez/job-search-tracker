@@ -311,3 +311,17 @@ func TestUpdateProfileJobHandlerRejectsMissingStatusAndNotes(t *testing.T) {
 		t.Fatal("expected UpdateProfileJobStatus not to be called")
 	}
 }
+
+func TestDeleteProfileJobHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &stubProfileJobRepository{}
+	router := gin.New()
+	router.DELETE("/profiles/:id/jobs/:jobId", DeleteProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodDelete, "/profiles/42/jobs/7", nil))
+
+	assertJSONResponse(t, response, http.StatusOK, `{"message":"Profile job deleted successfully"}`)
+	if !repo.called || repo.id != 42 || repo.jobID != 7 {
+		t.Errorf("unexpected repository call: %+v", repo)
+	}
+}

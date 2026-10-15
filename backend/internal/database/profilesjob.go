@@ -233,3 +233,21 @@ func (repo *PostgresProfileJobRepository) GetProfileJobs(ctx context.Context, pr
 	}
 	return savedProfileJobs, nil
 }
+
+func (repo *PostgresProfileJobRepository) DeleteProfileJob(ctx context.Context, profileID int, jobID int) error {
+	query := "DELETE FROM profile_jobs WHERE profile_id = $1, job_id = $2"
+	result, err := repo.db.ExecContext(ctx, query, profileID, jobID)
+	if err != nil {
+		return err
+	}
+	
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
