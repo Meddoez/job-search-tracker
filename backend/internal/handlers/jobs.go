@@ -242,8 +242,22 @@ func GetProfileJobsHandler(repo ProfileJobRepository) gin.HandlerFunc {
 	}
 }
 
-func UpdateProfileJobNotes(repo ProfileJobRepository) gin.HandlerFunc {
+func DeleteProfileJobHandler(repo ProfileJobRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		profileID, err := strconv.Atoi(c.Param("id"))
+		if err != nil  || profileID <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "A valid profileID is required"
+			})
+		}
 
+		jobID, err := strconv.Atoi(c.Param("jobId"))		
+		if err != nil || jobID <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "A valid jobID is required"
+			})
+		}
+
+		
 	}
 }

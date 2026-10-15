@@ -33,4 +33,6 @@ func RegisterRoutes(router *gin.Engine, client *http.Client, ingestionServiceURL
 	router.DELETE("/profiles/:id", handlers.DeleteProfileHandler(profileRepo))
 
 	router.GET("/profiles/:id/jobs", handlers.GetProfileJobsHandler(jobRepo))
+
+	router.DELETE("/profiles/:id/jobs/:jobId", handlers.DeleteProfileJobHandler(jobRepo))
 }
