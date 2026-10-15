@@ -84,6 +84,7 @@ profile_jobs = Table(
     Column("status", String, nullable=False, server_default="saved"),
     Column("saved_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
     Column("updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("notes", Text, nullable=True),
     CheckConstraint(
         "status IN ('saved', 'applied', 'interviewing', 'offer', 'rejected', 'withdrawn')",
         name="ck_profile_jobs_status",

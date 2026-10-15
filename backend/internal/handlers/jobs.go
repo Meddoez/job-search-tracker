@@ -26,13 +26,20 @@ type ProfileJobRepository interface {
 		jobID int,
 		status string,
 	) (models.ProfileJob, error)
+	UpdateProfileJobNotes(
+		ctx context.Context,
+		profileID int,
+		jobID int,
+		notes string,
+	) (models.ProfileJob, error)
 	GetProfileJobs(
 		ctx context.Context,
 		porfileID int) ([]models.SavedProfileJob, error)
 }
 
-type StatusRequest struct {
-	Status string `json:"status" binding:"required"`
+type UpdateProfileJobRequest struct {
+	Status *string `json:"status"`
+	Notes  *string `json:"notes"`
 }
 
 // SearchJobsHandler proxies transient searches to ingestion and validates its response.
@@ -126,9 +133,9 @@ func SaveProfileJobHandler(repo ProfileJobRepository) gin.HandlerFunc {
 	}
 }
 
-func UpdateProfileJobStatusHandler(repo ProfileJobRepository) gin.HandlerFunc {
+// TODO: Check if its possible to combine UpdateProfileJobsNotes and Status into a single function.
+func UpdateProfileJobHandler(repo ProfileJobRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// should we dedup commands like this? they are used a lot of the time? or does it make it more unclear?
 		profileID, err := strconv.Atoi(c.Param("id"))
 		if err != nil || profileID <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -145,34 +152,61 @@ func UpdateProfileJobStatusHandler(repo ProfileJobRepository) gin.HandlerFunc {
 			return
 		}
 
-		var request StatusRequest
+		var request UpdateProfileJobRequest
 		if err := c.ShouldBindJSON(&request); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "A valid status is required",
+				"message": "A valid update request is required",
 			})
 			return
 		}
 
-		switch request.Status {
-		case "saved", "applied", "interviewing", "offer", "rejected", "withdrawn":
-		default:
+		if request.Status == nil && request.Notes == nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "A valid job status is required",
+				"message": "At least one of status or notes is required",
 			})
 			return
 		}
 
-		profileJob, err := repo.UpdateProfileJobStatus(c.Request.Context(), profileID, jobID, request.Status)
-		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"message": "Saved job not found",
-			})
-			return
+		// If the Status request is invalid, return and dont update notes either.
+		var profileJob models.ProfileJob
+		if request.Status != nil {
+			switch *request.Status {
+			case "saved", "applied", "interviewing", "offer", "rejected", "withdrawn":
+				profileJob, err = repo.UpdateProfileJobStatus(c.Request.Context(), profileID, jobID, *request.Status)
+				if errors.Is(err, sql.ErrNoRows) {
+					c.JSON(http.StatusNotFound, gin.H{
+						"message": "Saved job not found",
+					})
+					return
+				}
+			default:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"message": "A valid job status is required",
+				})
+				return
+			}
 		}
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Failed to update profile job status",
+			})
+			return
+		}
+
+		if request.Notes != nil {
+			profileJob, err = repo.UpdateProfileJobNotes(c.Request.Context(), profileID, jobID, *request.Notes)
+			if errors.Is(err, sql.ErrNoRows) {
+				c.JSON(http.StatusNotFound, gin.H{
+					"message": "Saved jobs not found",
+				})
+				return
+			}
+		}
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Failed to update profile job notes",
 			})
 			return
 		}
@@ -205,5 +239,11 @@ func GetProfileJobsHandler(repo ProfileJobRepository) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{
 			"profile_job": savedProfileJobs,
 		})
+	}
+}
+
+func UpdateProfileJobNotes(repo ProfileJobRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
 	}
 }

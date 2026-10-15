@@ -20,14 +20,26 @@ type stubProfileJobRepository struct {
 	err    error
 	called bool
 	id     int
+	jobID  int
+	status *string
+	notes  *string
+	result models.ProfileJob
 }
 
 func (repo *stubProfileJobRepository) SaveProfileJob(context.Context, int, models.JobSearchResult) (models.ProfileJob, error) {
 	return models.ProfileJob{}, nil
 }
 
-func (repo *stubProfileJobRepository) UpdateProfileJobStatus(context.Context, int, int, string) (models.ProfileJob, error) {
-	return models.ProfileJob{}, nil
+func (repo *stubProfileJobRepository) UpdateProfileJobStatus(_ context.Context, id, jobID int, status string) (models.ProfileJob, error) {
+	repo.called, repo.id, repo.jobID = true, id, jobID
+	repo.status = &status
+	return repo.result, repo.err
+}
+
+func (repo *stubProfileJobRepository) UpdateProfileJobNotes(_ context.Context, id, jobID int, notes string) (models.ProfileJob, error) {
+	repo.called, repo.id, repo.jobID = true, id, jobID
+	repo.notes = &notes
+	return repo.result, repo.err
 }
 
 func (repo *stubProfileJobRepository) GetProfileJobs(_ context.Context, id int) ([]models.SavedProfileJob, error) {
@@ -154,6 +166,7 @@ func TestGetProfileJobsHandlerReturnsSavedJobs(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	savedAt := time.Date(2026, time.September, 27, 11, 0, 0, 0, time.UTC)
 	externalID := "jobtech-123"
+	notes := "Need to work on SQL joins"
 	repo := &stubProfileJobRepository{jobs: []models.SavedProfileJob{{
 		JobID: 7,
 		Job: models.JobSearchResult{
@@ -163,6 +176,7 @@ func TestGetProfileJobsHandlerReturnsSavedJobs(t *testing.T) {
 			Skills:     []string{"go", "postgresql"},
 		},
 		Status:    "applied",
+		Notes:     &notes,
 		SavedAt:   savedAt,
 		UpdatedAt: savedAt,
 	}}}
@@ -184,7 +198,7 @@ func TestGetProfileJobsHandlerReturnsSavedJobs(t *testing.T) {
 		t.Fatalf("expected one saved job, got %+v", body.ProfileJob)
 	}
 	job := body.ProfileJob[0]
-	if job.JobID != 7 || job.Job.Title != "Backend Developer" || job.Job.ExternalID == nil || *job.Job.ExternalID != externalID || job.Status != "applied" || !job.SavedAt.Equal(savedAt) || !job.UpdatedAt.Equal(savedAt) {
+	if job.JobID != 7 || job.Job.Title != "Backend Developer" || job.Job.ExternalID == nil || *job.Job.ExternalID != externalID || job.Status != "applied" || job.Notes == nil || *job.Notes != notes || !job.SavedAt.Equal(savedAt) || !job.UpdatedAt.Equal(savedAt) {
 		t.Errorf("unexpected saved job: %+v", job)
 	}
 	if len(job.Job.Skills) != 2 || job.Job.Skills[0] != "go" || job.Job.Skills[1] != "postgresql" {
@@ -238,5 +252,62 @@ func TestGetProfileJobsHandlerReturnsInternalServerError(t *testing.T) {
 	assertJSONResponse(t, response, http.StatusInternalServerError, `{"message":"Failed to get profile jobs"}`)
 	if !repo.called || repo.id != 42 {
 		t.Errorf("unexpected repository call: called=%v id=%d", repo.called, repo.id)
+	}
+}
+
+func TestUpdateProfileJobHandlerStatus(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &stubProfileJobRepository{result: models.ProfileJob{ProfileID: 42, JobID: 7, Status: "applied"}}
+	router := gin.New()
+	router.PUT("/profiles/:id/jobs/:jobId", UpdateProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodPut, "/profiles/42/jobs/7", strings.NewReader(`{"status":"applied"}`)))
+
+	assertJSONResponse(t, response, http.StatusOK, `{"profile_job":{"profile_id":42,"job_id":7,"status":"applied","notes":null,"saved_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}}`)
+	if !repo.called || repo.id != 42 || repo.jobID != 7 || repo.status == nil || *repo.status != "applied" || repo.notes != nil {
+		t.Errorf("unexpected repository call: called=%v id=%d", repo.called, repo.id)
+	}
+}
+
+func TestUpdateProfileJobHandlerStatusAndNotes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	notes := "Review SQL joins"
+	repo := &stubProfileJobRepository{result: models.ProfileJob{ProfileID: 42, JobID: 7, Status: "interviewing", Notes: &notes}}
+	router := gin.New()
+	router.PUT("/profiles/:id/jobs/:jobId", UpdateProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodPut, "/profiles/42/jobs/7", strings.NewReader(`{"status":"interviewing","notes":"Review SQL joins"}`)))
+
+	assertJSONResponse(t, response, http.StatusOK, `{"profile_job":{"profile_id":42,"job_id":7,"status":"interviewing","notes":"Review SQL joins","saved_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}}`)
+	if !repo.called || repo.id != 42 || repo.jobID != 7 || repo.notes == nil || *repo.notes != notes || repo.status == nil || *repo.status != "interviewing" {
+		t.Errorf("unexpected repository call: %+v", repo)
+	}
+}
+
+func TestUpdateProfileJobHandlerRejectsInvalidStatus(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &stubProfileJobRepository{}
+	router := gin.New()
+	router.PUT("/profiles/:id/jobs/:jobId", UpdateProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodPut, "/profiles/42/jobs/7", strings.NewReader(`{"status":"invalid"}`)))
+
+	assertJSONResponse(t, response, http.StatusBadRequest, `{"message":"A valid job status is required"}`)
+	if repo.called {
+		t.Fatal("expected UpdateProfileJobStatus not to be called")
+	}
+}
+
+func TestUpdateProfileJobHandlerRejectsMissingStatusAndNotes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &stubProfileJobRepository{}
+	router := gin.New()
+	router.PUT("/profiles/:id/jobs/:jobId", UpdateProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodPut, "/profiles/42/jobs/7", strings.NewReader(`{}`)))
+
+	assertJSONResponse(t, response, http.StatusBadRequest, `{"message":"At least one of status or notes is required"}`)
+	if repo.called {
+		t.Fatal("expected UpdateProfileJobStatus not to be called")
 	}
 }

@@ -49,7 +49,7 @@ Start the application:
 make up
 ```
 
-Compose builds the services, starts PostgreSQL, and runs database migrations before starting the Go API. The first build may take a few minutes.
+Compose builds the services, starts PostgreSQL, and runs database migrations before starting the Go API. 
 
 Open **http://localhost:5173**. The Go API is available at **http://localhost:8080**, and PostgreSQL is exposed on port **55432** by default. You can change these using `FRONTEND_PORT`, `API_PORT`, and `POSTGRES_PORT` in `.env`.
 

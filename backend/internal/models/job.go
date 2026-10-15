@@ -28,6 +28,7 @@ type ProfileJob struct {
 	ProfileID int       `json:"profile_id"`
 	JobID     int       `json:"job_id"`
 	Status    string    `json:"status"`
+	Notes     *string   `json:"notes"`
 	SavedAt   time.Time `json:"saved_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -37,6 +38,7 @@ type SavedProfileJob struct {
 	JobID     int             `json:"job_id"`
 	Job       JobSearchResult `json:"job"`
 	Status    string          `json:"status"`
+	Notes     *string         `json:"notes"`
 	SavedAt   time.Time       `json:"saved_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 }

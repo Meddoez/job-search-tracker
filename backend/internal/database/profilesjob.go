@@ -92,7 +92,7 @@ func (repo *PostgresProfileJobRepository) SaveProfileJob(ctx context.Context, pr
 		VALUES ($1, $2)
 		ON CONFLICT (profile_id, job_id)
 		DO UPDATE SET job_id = profile_jobs.job_id
-		RETURNING profile_id, job_id, status, saved_at, updated_at
+		RETURNING profile_id, job_id, status, notes, saved_at, updated_at
 	`
 
 	var profileJob models.ProfileJob
@@ -100,6 +100,7 @@ func (repo *PostgresProfileJobRepository) SaveProfileJob(ctx context.Context, pr
 		&profileJob.ProfileID,
 		&profileJob.JobID,
 		&profileJob.Status,
+		&profileJob.Notes,
 		&profileJob.SavedAt,
 		&profileJob.UpdatedAt,
 	)
@@ -122,7 +123,7 @@ func (repo *PostgresProfileJobRepository) UpdateProfileJobStatus(ctx context.Con
     updated_at = NOW()
 	WHERE profile_id = $1
 	AND job_id = $2
-	RETURNING profile_id, job_id, status, saved_at, updated_at
+	RETURNING profile_id, job_id, status, notes, saved_at, updated_at
 	`
 
 	var profileJob models.ProfileJob
@@ -130,11 +131,39 @@ func (repo *PostgresProfileJobRepository) UpdateProfileJobStatus(ctx context.Con
 		&profileJob.ProfileID,
 		&profileJob.JobID,
 		&profileJob.Status,
+		&profileJob.Notes,
 		&profileJob.SavedAt,
 		&profileJob.UpdatedAt,
 	)
 	if err != nil {
 		return models.ProfileJob{}, fmt.Errorf("Update profile job status: %w", err)
+	}
+
+	return profileJob, nil
+}
+
+func (repo *PostgresProfileJobRepository) UpdateProfileJobNotes(ctx context.Context, profileID int, jobID int, notes string) (models.ProfileJob, error) {
+	query := `
+	UPDATE profile_jobs
+	SET
+    notes = $3,
+    updated_at = NOW()
+	WHERE profile_id = $1
+	AND job_id = $2
+	RETURNING profile_id, job_id, status, notes, saved_at, updated_at
+	`
+
+	var profileJob models.ProfileJob
+	err := repo.db.QueryRowContext(ctx, query, profileID, jobID, notes).Scan(
+		&profileJob.ProfileID,
+		&profileJob.JobID,
+		&profileJob.Status,
+		&profileJob.Notes,
+		&profileJob.SavedAt,
+		&profileJob.UpdatedAt,
+	)
+	if err != nil {
+		return models.ProfileJob{}, fmt.Errorf("Update profile job notes: %w", err)
 	}
 
 	return profileJob, nil
@@ -160,6 +189,7 @@ func (repo *PostgresProfileJobRepository) GetProfileJobs(ctx context.Context, pr
 			ORDER BY js.position
 		) AS skills,
 		pj.status,
+		pj.notes,
 		pj.saved_at,
 		pj.updated_at
 	FROM profile_jobs AS pj
@@ -189,6 +219,7 @@ func (repo *PostgresProfileJobRepository) GetProfileJobs(ctx context.Context, pr
 			&saved.Job.IsRemote,
 			pq.Array(&saved.Job.Skills),
 			&saved.Status,
+			&saved.Notes,
 			&saved.SavedAt,
 			&saved.UpdatedAt,
 		)

@@ -71,8 +71,8 @@ func TestSaveProfileJobReturnsSavedProfileJob(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO profile_jobs")).
 		WithArgs(profileID, jobID).
 		WillReturnRows(
-			sqlmock.NewRows([]string{"profile_id", "job_id", "status", "saved_at", "updated_at"}).
-				AddRow(profileID, jobID, "saved", savedAt, updatedAt),
+			sqlmock.NewRows([]string{"profile_id", "job_id", "status", "notes", "saved_at", "updated_at"}).
+				AddRow(profileID, jobID, "saved", nil, savedAt, updatedAt),
 		)
 	mock.ExpectCommit()
 
@@ -102,10 +102,11 @@ func TestUpdateProfileJobStatusReturnsUpdatedProfileJob(t *testing.T) {
 	savedAt := time.Date(2026, time.September, 27, 11, 0, 0, 0, time.UTC)
 	updatedAt := savedAt.Add(time.Hour)
 	newStatus := "applied"
+	notes := "Review SQL joins"
 	mock.ExpectQuery(regexp.QuoteMeta("UPDATE profile_jobs SET status = $3, updated_at = NOW() WHERE profile_id = $1 AND job_id = $2")).
 		WithArgs(profileID, jobID, newStatus).
-		WillReturnRows(sqlmock.NewRows([]string{"profile_id", "job_id", "status", "saved_at", "updated_at"}).
-			AddRow(profileID, jobID, newStatus, savedAt, updatedAt))
+		WillReturnRows(sqlmock.NewRows([]string{"profile_id", "job_id", "status", "notes", "saved_at", "updated_at"}).
+			AddRow(profileID, jobID, newStatus, notes, savedAt, updatedAt))
 
 	repo := NewProfileJobRepository(db)
 	profileJob, err := repo.UpdateProfileJobStatus(context.Background(), profileID, jobID, newStatus)
@@ -115,8 +116,38 @@ func TestUpdateProfileJobStatusReturnsUpdatedProfileJob(t *testing.T) {
 	if profileJob.ProfileID != profileID || profileJob.JobID != jobID || profileJob.Status != newStatus {
 		t.Errorf("unexpected profile job: %+v", profileJob)
 	}
+	if profileJob.Notes == nil || *profileJob.Notes != notes {
+		t.Errorf("expected existing notes to be returned, got %+v", profileJob)
+	}
 	if !profileJob.SavedAt.Equal(savedAt) || !profileJob.UpdatedAt.Equal(updatedAt) {
 		t.Errorf("unexpected profile job timestamps: %+v", profileJob)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpdateProfileJobNotes(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	notes := "Review SQL joins"
+	savedAt := time.Date(2026, time.September, 27, 11, 0, 0, 0, time.UTC)
+	updatedAt := savedAt.Add(time.Hour)
+	mock.ExpectQuery(regexp.QuoteMeta("UPDATE profile_jobs SET notes = $3, updated_at = NOW() WHERE profile_id = $1 AND job_id = $2")).
+		WithArgs(profileID, jobID, notes).
+		WillReturnRows(sqlmock.NewRows([]string{"profile_id", "job_id", "status", "notes", "saved_at", "updated_at"}).
+			AddRow(profileID, jobID, "interviewing", notes, savedAt, updatedAt))
+
+	job, err := NewProfileJobRepository(db).UpdateProfileJobNotes(context.Background(), profileID, jobID, notes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job.ProfileID != profileID || job.JobID != jobID || job.Status != "interviewing" || job.Notes == nil || *job.Notes != notes || !job.SavedAt.Equal(savedAt) || !job.UpdatedAt.Equal(updatedAt) {
+		t.Errorf("unexpected updated profile job: %+v", job)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatal(err)
@@ -136,14 +167,14 @@ func TestGetProfileJobsReturnsSavedJobs(t *testing.T) {
 		WithArgs(profileID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "source", "external_id", "title", "company", "location", "url",
-			"description", "date_posted", "is_remote", "skills", "status", "saved_at", "updated_at",
+			"description", "date_posted", "is_remote", "skills", "status", "notes", "saved_at", "updated_at",
 		}).AddRow(
 			jobID, "jobtech", "jobtech-123", "Backend Developer", "Example AB", "Stockholm",
 			"https://example.com/jobs/123", "Build Go services.", "2026-09-27T10:00:00", true,
-			"{go,postgresql}", "applied", savedAt, updatedAt,
+			"{go,postgresql}", "applied", "Need to work on SQL joins", savedAt, updatedAt,
 		).AddRow(
 			8, "jobtech", "jobtech-456", "Frontend Developer", nil, nil,
-			nil, nil, nil, nil, "{}", "saved", savedAt, savedAt,
+			nil, nil, nil, nil, "{}", "saved", "Need to review frontend frameworks", savedAt, savedAt,
 		))
 
 	jobs, err := NewProfileJobRepository(db).GetProfileJobs(context.Background(), profileID)

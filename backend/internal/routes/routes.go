@@ -28,7 +28,7 @@ func RegisterRoutes(router *gin.Engine, client *http.Client, ingestionServiceURL
 
 	router.POST("/profiles/:id/jobs", handlers.SaveProfileJobHandler(jobRepo))
 
-	router.PATCH("/profiles/:id/jobs/:jobId", handlers.UpdateProfileJobStatusHandler(jobRepo))
+	router.PATCH("/profiles/:id/jobs/:jobId", handlers.UpdateProfileJobHandler(jobRepo))
 
 	router.DELETE("/profiles/:id", handlers.DeleteProfileHandler(profileRepo))
 
