@@ -1,3 +1,5 @@
+import { SavedJobUpdate } from "../pages/ProfileDetails"
+
 export type Job = {
   source: string
   external_id: string | null
@@ -15,6 +17,7 @@ export type SavedProfileJob = {
   job_id: number
   job: Job
   status: string
+  notes: string | null
   saved_at: string
   updated_at: string
 }
@@ -103,12 +106,12 @@ export async function getSavedJobs(
 export async function updateSavedJob(
   profile_id: number,
   job_id: number,
-  status: string,
+  update: SavedJobUpdate,
 ): Promise<SavedProfileJob> {
   const response = await fetch(`/api/profiles/${profile_id}/jobs/${job_id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(update),
   })
 
   if (!response.ok) {

@@ -39,7 +39,7 @@ type ProfileJobRepository interface {
 		ctx context.Context,
 		profileID int,
 		jobID int,
-	) (error)
+	) error
 }
 
 type UpdateProfileJobRequest struct {
@@ -250,14 +250,14 @@ func GetProfileJobsHandler(repo ProfileJobRepository) gin.HandlerFunc {
 func DeleteProfileJobHandler(repo ProfileJobRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		profileID, err := strconv.Atoi(c.Param("id"))
-		if err != nil  || profileID <= 0 {
+		if err != nil || profileID <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "A valid profileID is required",
 			})
 			return
 		}
 
-		jobID, err := strconv.Atoi(c.Param("jobId"))		
+		jobID, err := strconv.Atoi(c.Param("jobId"))
 		if err != nil || jobID <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "A valid jobID is required",
@@ -267,19 +267,19 @@ func DeleteProfileJobHandler(repo ProfileJobRepository) gin.HandlerFunc {
 
 		err = repo.DeleteProfileJob(c.Request.Context(), profileID, jobID)
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H {
+			c.JSON(http.StatusNotFound, gin.H{
 				"message": "ProfileJob not found",
 			})
 			return
 		}
-
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H {
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Failed to delete ProfileJob",
 			})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H {
+
+		c.JSON(http.StatusOK, gin.H{
 			"message": "Succesfully deleted ProfileJob",
 		})
 	}

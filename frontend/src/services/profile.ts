@@ -4,8 +4,7 @@ export type Profile = {
   skills: string[]
 }
 
-// Should not use effect, but maybe the display of profiles when entering the profiles page?
-// add a useState for error, seterror ?
+// TODO: When creating a profile, we need to show that a profile was successfully created and refresh the page/update the sidebar so that it shows the new profile
 export async function createProfile(
   name: string,
   skills: string[],
@@ -35,7 +34,6 @@ export async function getProfile(id: number): Promise<Profile> {
   return data.profile
 }
 
-// We need to deduplicate thse get functions
 export async function getProfiles(): Promise<Profile[]> {
   const response = await fetch(`/api/profiles`)
   if (!response.ok) {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -46,6 +47,13 @@ func (repo *stubProfileJobRepository) GetProfileJobs(_ context.Context, id int) 
 	repo.called = true
 	repo.id = id
 	return repo.jobs, repo.err
+}
+
+func (repo *stubProfileJobRepository) DeleteProfileJob(_ context.Context, id int, jobID int) error {
+	repo.called = true
+	repo.id = id
+	repo.jobID = jobID
+	return repo.err
 }
 
 func TestSearchJobsHandlerForwardsAndValidatesResponse(t *testing.T) {
@@ -320,7 +328,35 @@ func TestDeleteProfileJobHandler(t *testing.T) {
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, httptest.NewRequest(http.MethodDelete, "/profiles/42/jobs/7", nil))
 
-	assertJSONResponse(t, response, http.StatusOK, `{"message":"Profile job deleted successfully"}`)
+	assertJSONResponse(t, response, http.StatusOK, `{"message":"Succesfully deleted ProfileJob"}`)
+	if !repo.called || repo.id != 42 || repo.jobID != 7 {
+		t.Errorf("unexpected repository call: %+v", repo)
+	}
+}
+
+func TestDeleteProfileJobHandlerReturnsInternalServerError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &stubProfileJobRepository{err: errors.New("database unavailable")}
+	router := gin.New()
+	router.DELETE("/profiles/:id/jobs/:jobId", DeleteProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodDelete, "/profiles/42/jobs/7", nil))
+
+	assertJSONResponse(t, response, http.StatusInternalServerError, `{"message":"Failed to delete ProfileJob"}`)
+	if !repo.called || repo.id != 42 || repo.jobID != 7 {
+		t.Errorf("unexpected repository call: %+v", repo)
+	}
+}
+
+func TestDeleteProfileJobHandlerReturnsNotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &stubProfileJobRepository{err: sql.ErrNoRows}
+	router := gin.New()
+	router.DELETE("/profiles/:id/jobs/:jobId", DeleteProfileJobHandler(repo))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodDelete, "/profiles/42/jobs/7", nil))
+
+	assertJSONResponse(t, response, http.StatusNotFound, `{"message":"ProfileJob not found"}`)
 	if !repo.called || repo.id != 42 || repo.jobID != 7 {
 		t.Errorf("unexpected repository call: %+v", repo)
 	}

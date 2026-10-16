@@ -69,7 +69,7 @@ it("filters fetched jobs by status and returns to all jobs", async () => {
     name: "Backend Developer",
     skills: [],
   })
-  const job = (id: number, title: string, status: string): SavedProfileJob => ({
+  const job = (id: number, title: string, status: string, notes: string): SavedProfileJob => ({
     job_id: id,
     job: {
       source: "jobtech",
@@ -84,12 +84,13 @@ it("filters fetched jobs by status and returns to all jobs", async () => {
       is_remote: null,
     },
     status,
+    notes,
     saved_at: "2026-10-10T12:00:00Z",
     updated_at: "2026-10-10T12:00:00Z",
   })
   getSavedJobsMock.mockResolvedValue([
-    job(1, "Go Developer", "saved"),
-    job(2, "React Developer", "applied"),
+    job(1, "Go Developer", "saved", "improve"),
+    job(2, "React Developer", "applied", "need to work on sql"),
   ])
 
   render(

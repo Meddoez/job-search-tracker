@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link, useParams } from "react-router"
+import { Form, Link, useParams } from "react-router"
 
 import { getProfile, type Profile } from "../services/profile"
 import { getSavedJobs, type SavedProfileJob } from "../services/jobs"
@@ -16,6 +16,11 @@ const statusViews = [
 
 type JobStatus = (typeof statusViews)[number]
 type JobView = "all" | JobStatus
+
+export type SavedJobUpdate = {
+  status?: JobStatus
+  notes?: string
+}
 
 function SavedJobsSkeleton() {
   return (
@@ -75,17 +80,30 @@ export function ProfileDetailsPage() {
     }
   }, [profileId])
 
-  async function handleStatusChange(jobId: number, jobStatus: JobStatus) {
+  async function handleStatusChange(jobId: number, update: SavedJobUpdate) {
     try {
-      await updateSavedJob(profileId, jobId, jobStatus)
+      await updateSavedJob(profileId, jobId, update)
       setSavedJobs(
         (prevJobs) =>
           prevJobs?.map((job) =>
-            job.job_id === jobId ? { ...job, status: jobStatus } : job,
+            job.job_id === jobId && update.status !== undefined
+              ? { ...job, status: update.status }
+              : job,
           ) ?? null,
       )
     } catch (error) {
       console.error("Error updating saved job:", error)
+    }
+  }
+
+  async function HandleNotesSave(jobId: number, update: SavedJobUpdate) {
+    try {
+      await updateSavedJob(profileId, jobId, update)
+
+
+
+    } catch (error) {
+      console.error("Error updating saved notes:", error)
     }
   }
 
@@ -250,9 +268,9 @@ export function ProfileDetailsPage() {
                     value={savedJob.status}
                     onChange={(e) =>
                       handleStatusChange(
-                        savedJob.job_id,
-                        e.target.value as JobStatus,
-                      )
+                        savedJob.job_id, { 
+                        status: e.target.value as JobStatus
+                      })
                     }
                     className="mt-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition group-hover:border-sky-400/40 group-hover:text-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
                   >
@@ -262,6 +280,16 @@ export function ProfileDetailsPage() {
                       </option>
                     ))}
                   </select>
+                  <form className="mt-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition group-hover:border-sky-400/40 group-hover:text-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400" 
+                  >
+                    <label htmlFor="notes" className="font-semibold">Notes:</label>
+                    <textarea className="bg-white text-black rounded-lg border-slate-700 focus-visible:outline-offset-2 flex"
+                      id="notes" 
+                      name="notes" 
+                      maxLength={100}
+                      placeholder="Enter notes here..."
+                    ></textarea>
+                  </form>
                 </div>
               ))
             )}

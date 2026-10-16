@@ -14,15 +14,16 @@ func TestRegisterRoutesRegistersPublicAPI(t *testing.T) {
 	RegisterRoutes(router, nil, "", nil, nil)
 
 	want := map[string]bool{
-		http.MethodGet + " /ping":                       true,
-		http.MethodPost + " /jobs/search":               true,
-		http.MethodGet + " /profiles":                   true,
-		http.MethodPost + " /profiles":                  true,
-		http.MethodGet + " /profiles/:id":               true,
-		http.MethodPost + " /profiles/:id/jobs":         true,
-		http.MethodPatch + " /profiles/:id/jobs/:jobId": true,
-		http.MethodDelete + " /profiles/:id":            true,
-		http.MethodGet + " /profiles/:id/jobs":          true,
+		http.MethodGet + " /ping":                        true,
+		http.MethodPost + " /jobs/search":                true,
+		http.MethodGet + " /profiles":                    true,
+		http.MethodPost + " /profiles":                   true,
+		http.MethodGet + " /profiles/:id":                true,
+		http.MethodPost + " /profiles/:id/jobs":          true,
+		http.MethodPatch + " /profiles/:id/jobs/:jobId":  true,
+		http.MethodDelete + " /profiles/:id":             true,
+		http.MethodGet + " /profiles/:id/jobs":           true,
+		http.MethodDelete + " /profiles/:id/jobs/:jobId": true,
 	}
 	got := make(map[string]bool)
 	for _, route := range router.Routes() {
