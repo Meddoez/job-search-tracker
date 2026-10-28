@@ -280,7 +280,10 @@ export function ProfileDetailsPage() {
                       </option>
                     ))}
                   </select>
-                  <form className="mt-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition group-hover:border-sky-400/40 group-hover:text-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400" 
+                  <form onSubmit={(e) => {
+
+                  }}
+                  className="mt-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition group-hover:border-sky-400/40 group-hover:text-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400" 
                   >
                     <label htmlFor="notes" className="font-semibold">Notes:</label>
                     <textarea className="bg-white text-black rounded-lg border-slate-700 focus-visible:outline-offset-2 flex"
