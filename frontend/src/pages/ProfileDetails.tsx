@@ -80,7 +80,7 @@ export function ProfileDetailsPage() {
     }
   }, [profileId])
 
-  async function handleStatusChange(jobId: number, update: SavedJobUpdate) {
+  async function handleJobUpdate(jobId: number, update: SavedJobUpdate) {
     try {
       await updateSavedJob(profileId, jobId, update)
       setSavedJobs(
@@ -91,16 +91,22 @@ export function ProfileDetailsPage() {
               : job,
           ) ?? null,
       )
+      setSavedJobs(
+        (prevJobs) =>
+          prevJobs?.map((job) =>
+            job.job_id === jobId && update.notes !== undefined
+              ? { ...job, notes: update.notes }
+              : job,
+          ) ?? null,
+      )
     } catch (error) {
       console.error("Error updating saved job:", error)
     }
   }
 
-  async function HandleNotesSave(jobId: number, update: SavedJobUpdate) {
+  async function handleNotesSave(jobId: number, update: SavedJobUpdate) {
     try {
       await updateSavedJob(profileId, jobId, update)
-
-
 
     } catch (error) {
       console.error("Error updating saved notes:", error)
@@ -267,7 +273,7 @@ export function ProfileDetailsPage() {
                   <select
                     value={savedJob.status}
                     onChange={(e) =>
-                      handleStatusChange(
+                      handleJobUpdate(
                         savedJob.job_id, { 
                         status: e.target.value as JobStatus
                       })
@@ -281,17 +287,28 @@ export function ProfileDetailsPage() {
                     ))}
                   </select>
                   <form onSubmit={(e) => {
+                    e.preventDefault()
+                    const form = e.currentTarget
+                    const formData = new FormData(form)
+                    const notes = String(formData.get("notes") ?? "")
 
+                    handleJobUpdate(
+                      savedJob.job_id, {
+                      notes
+                      }
+                    )
                   }}
                   className="mt-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition group-hover:border-sky-400/40 group-hover:text-sky-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400" 
                   >
-                    <label htmlFor="notes" className="font-semibold">Notes:</label>
+                    <label htmlFor={`notes-${savedJob.job_id}`} className="font-semibold">Notes:</label>
                     <textarea className="bg-white text-black rounded-lg border-slate-700 focus-visible:outline-offset-2 flex"
-                      id="notes" 
-                      name="notes" 
+                      id={`notes-${savedJob.job_id}`}
+                      name="notes"
+                      defaultValue={savedJob.notes ?? ""}
                       maxLength={100}
                       placeholder="Enter notes here..."
                     ></textarea>
+                    <button type="submit"> Save Notes</button>
                   </form>
                 </div>
               ))
